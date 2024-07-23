@@ -1,9 +1,15 @@
 import requests
 
 chainId = "ethereum"
-pairAddress = "0x0542c51aaf23f13e9f0f11accda67b06ae561a4c"
+pairAddress = "0xd7570342c2d5de4413ec131b5e79c4aeeef5d35d"
+is_honeypot_obj = {}
 
 data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pairAddress}").text
+
+def sendNotification(honeypot_obj):
+    if honeypot_obj["notify"] == False:
+        return False
+    # TO-DO - send desktop and sms notification
 
 def isRug(address):
     url = "https://api.honeypot.is/v2/IsHoneypot"
@@ -12,9 +18,29 @@ def isRug(address):
         "address": address
     }
     honeypot_response = requests.get(url, params = params)
-    print(honeypot_response.json())
+    for key, value in honeypot_response.json().items():
+        if key == "summary":
+            if value["risk"] == 'medium' or value["riskLevel"] <= 31:
+                is_honeypot_obj["notify"] = True
+            if value["risk"] == 'low' or value["riskLevel"] <= 31:
+                is_honeypot_obj["notify"] = True
+            else:
+                is_honeypot_obj["notify"] = False
+
+        if key == "honeypotResult":
+            if value["isHoneypot"] == True:
+                is_honeypot_obj["notify"] = False
+
+        if key == "simulationResult" and value["buyTax"] != 0 and value["sellTax"] != 0 and value["transferTax"] != 0 and value["buyGas"] != 0 and value["sellGas"] != 0:
+            is_honeypot_obj["notify"] = False
+        
+        if key == "flags":
+            if "EXTREMELY_HIGH_TAXES" in value or "high_fail_rate" in value or "some_snipers_honeypot" in value:
+                is_honeypot_obj["notify"] = False
+        print(key, ' : ', value)
+
 
 isRug(pairAddress)
 
-# need to add logic for rug check + look into dextools API
+# Look into dextools API
 # Look into setting up desktop notifications and SMS notifications using sinch or pushover
