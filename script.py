@@ -1,5 +1,8 @@
 import requests
-from winotify import Notification, audio
+from win10toast import ToastNotifier
+import webbrowser
+import time
+import threading
 
 chainId = "ethereum"
 pairAddress = "0x594daad7d77592a2b97b725a7ad59d7e188b5bfa"
@@ -7,20 +10,24 @@ is_honeypot_obj = {}
 
 data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pairAddress}").text
 
-def sendNotification(honeypot_obj):
+def sendNotification(honeypot_obj, title, message, link):
     if not honeypot_obj.get("notify", False):
         return
+
+    toaster = ToastNotifier()
+    toaster.show_toast(title,
+                message,
+                icon_path=None,
+                duration=10,
+                threaded=True)
     
-    try:
-        notification_popup = Notification(app_id="Dextools trending notifier",
-                                          title="New token",
-                                          msg="Hi",
-                                          duration="long")
-        notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
-        notification_popup.set_audio(audio.SMS, loop=False)
-        notification_popup.show()
-    except Exception as e:
-        print(f"Error showing notification: {e}")
+    def monitorNotification():
+        while toaster.notification_active():
+            time.sleep(0.1)
+        if not toaster.notification_active():
+            webbrowser.open(link)
+
+    threading.Thread(target=monitorNotification).start()
 
     # TO-DO - send desktop and sms notification
 
@@ -53,9 +60,14 @@ def isRug(address):
         print(key, ' : ', value)
 
 
-isRug(pairAddress)
-print('\n\n', is_honeypot_obj) # for testing purposes
-sendNotification(is_honeypot_obj)
+
+if __name__ == "__main__":
+    title = "Important Update Available"
+    message = "Click here to download the latest version."
+    link = f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}"
+    isRug(pairAddress)
+    print('\n\n', is_honeypot_obj) # for testing purposes 
+    sendNotification(is_honeypot_obj, title, message, link)
 
 # Look into dextools API
 # Look into setting up desktop notifications and SMS notifications using sinch or pushover
