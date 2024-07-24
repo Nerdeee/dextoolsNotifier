@@ -2,7 +2,7 @@ import requests
 from winotify import Notification, audio
 
 chainId = "ethereum"
-pairAddress = "0xd7570342c2d5de4413ec131b5e79c4aeeef5d35d"
+pairAddress = "0x594daad7d77592a2b97b725a7ad59d7e188b5bfa"
 is_honeypot_obj = {}
 
 data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pairAddress}").text
@@ -10,11 +10,16 @@ data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pa
 def sendNotification(honeypot_obj):
     if honeypot_obj["notify"] == False:
         return False
-    notification_popup = Notification(app_id="Dextools trending notifier",
-                                      title="New token",
-                                      duration="long",
-                                      icon="")
-    notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
+    else:
+        try:
+            notification_popup = Notification(app_id="Dextools trending notifier",
+                                            title="New token",
+                                            duration="long")
+            notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
+            notification_popup.set_audio(audio.SMS, loop=False)
+            notification_popup.show()
+        except Exception as e:
+            print(e)
     # TO-DO - send desktop and sms notification
 
 def isRug(address):
@@ -47,6 +52,8 @@ def isRug(address):
 
 
 isRug(pairAddress)
+print('\n\n', is_honeypot_obj) # for testing purposes
+sendNotification(is_honeypot_obj)
 
 # Look into dextools API
 # Look into setting up desktop notifications and SMS notifications using sinch or pushover
