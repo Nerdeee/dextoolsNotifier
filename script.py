@@ -1,4 +1,5 @@
 import requests
+from winotify import Notification, audio
 
 chainId = "ethereum"
 pairAddress = "0xd7570342c2d5de4413ec131b5e79c4aeeef5d35d"
@@ -9,6 +10,11 @@ data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pa
 def sendNotification(honeypot_obj):
     if honeypot_obj["notify"] == False:
         return False
+    notification_popup = Notification(app_id="Dextools trending notifier",
+                                      title="New token",
+                                      duration="long",
+                                      icon="")
+    notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
     # TO-DO - send desktop and sms notification
 
 def isRug(address):
