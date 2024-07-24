@@ -8,18 +8,20 @@ is_honeypot_obj = {}
 data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pairAddress}").text
 
 def sendNotification(honeypot_obj):
-    if honeypot_obj["notify"] == False:
-        return False
-    else:
-        try:
-            notification_popup = Notification(app_id="Dextools trending notifier",
-                                            title="New token",
-                                            duration="long")
-            notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
-            notification_popup.set_audio(audio.SMS, loop=False)
-            notification_popup.show()
-        except Exception as e:
-            print(e)
+    if not honeypot_obj.get("notify", False):
+        return
+    
+    try:
+        notification_popup = Notification(app_id="Dextools trending notifier",
+                                          title="New token",
+                                          msg="Hi",
+                                          duration="long")
+        notification_popup.add_actions(label="Launch chart", launch=f"https://www.dextools.io/app/en/ether/pair-explorer/{pairAddress}")
+        notification_popup.set_audio(audio.SMS, loop=False)
+        notification_popup.show()
+    except Exception as e:
+        print(f"Error showing notification: {e}")
+
     # TO-DO - send desktop and sms notification
 
 def isRug(address):
