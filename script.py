@@ -3,6 +3,12 @@ from win10toast import ToastNotifier
 import webbrowser
 import time
 import threading
+import smtplib
+from email.message import EmailMessage
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 chainId = "ethereum"
 pairAddress = "0x594daad7d77592a2b97b725a7ad59d7e188b5bfa"
@@ -11,6 +17,31 @@ is_honeypot_obj = {}
 data = requests.get(f"https://api.dexscreener.com/latest/dex/pairs/{chainId}/{pairAddress}").text
 
 def sendNotification(honeypot_obj, title, message, link):
+    def monitorNotification():
+        while toaster.notification_active():
+            time.sleep(0.1)
+        if not toaster.notification_active():
+            webbrowser.open(link)
+
+    def email_alert(subject, body, to):
+        msg = EmailMessage()
+        msg.set_content(body)
+        msg['subject'] = subject
+        msg['to'] = to
+
+        user = os.getenv('SENDER')
+        msg['from'] = user
+        password = os.getenv('EMAILPASSWORD')
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(user, password)
+        server.send_message(msg)
+
+        server.quit()
+        print("email alert sent")
+    
+
     if not honeypot_obj.get("notify", False):
         return
 
@@ -20,15 +51,10 @@ def sendNotification(honeypot_obj, title, message, link):
                 icon_path=None,
                 duration=10,
                 threaded=True)
-    
-    def monitorNotification():
-        while toaster.notification_active():
-            time.sleep(0.1)
-        if not toaster.notification_active():
-            webbrowser.open(link)
 
     threading.Thread(target=monitorNotification).start()
 
+    email_alert('IMPORTANT: New trending pair', f"Pair address: {pairAddress}",  os.getenv('RECIPIENT'))
     # TO-DO - send desktop and sms notification
 
 def isRug(address):
@@ -70,4 +96,3 @@ if __name__ == "__main__":
     sendNotification(is_honeypot_obj, title, message, link)
 
 # Look into dextools API
-# Look into setting up desktop notifications and SMS notifications using sinch or pushover
